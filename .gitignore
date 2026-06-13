@@ -10,3 +10,4 @@ package-lock.json
 /plugin/dompurify/
 /plugin/@zip.js/
 docs/AI_CHANGELOG.md
+.devenv/
