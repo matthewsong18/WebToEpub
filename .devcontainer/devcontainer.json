@@ -1,0 +1,22 @@
+{
+  "customization": {
+    "zed": {
+      "extensions": [
+        "nix"
+      ]
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "mkhl.direnv"
+      ]
+    },
+    "zed": {
+      "extensions": []
+    }
+  },
+  "image": "ghcr.io/cachix/devenv/devcontainer:latest",
+  "overrideCommand": false,
+  "updateContentCommand": "devenv test"
+}
