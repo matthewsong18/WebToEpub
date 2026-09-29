@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "ES2022"
+  },
+  "include": [
+    "globals.d.ts",
+    "plugin/js/parsers/ReadRiftParser.js"
+  ]
+}
