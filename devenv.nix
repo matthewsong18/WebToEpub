@@ -20,6 +20,10 @@
     npm.enable = true;
   };
 
+  languages.typescript = {
+    enable = true;
+  };
+
   devcontainer = {
     enable = true;
     settings.customization.zed.extensions = [
