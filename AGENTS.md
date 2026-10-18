@@ -254,3 +254,24 @@ When creating a new parser, follow these required steps:
 - **Vanilla JavaScript**: Use standard modern JavaScript (ES6+ / async-await). Do not introduce external npm dependencies into client-side parser scripts.
 - **Preserve User Preferences**: Never force behavior changes on users without a preference toggle. If adding new options, expose them via `populateUIImpl()` and default them to off/safe behavior.
 - **Respect Anti-Scraping Etiquette**: Set an appropriate `this.minimumThrottle` when scraping sensitive sites to avoid IP bans.
+
+## 7. Local Repository Workflow
+
+## Project Structure
+
+- Extension code is in `plugin/`; site parsers are in `plugin/js/parsers/`.
+- QUnit tests and fixtures are in `unitTest/`; `Tests.html` loads the test suite.
+- Packaging and lint configuration are in `eslint/`.
+
+## Build and Checks
+
+- Use `just build` as the containerized build and lint entry point; its definition is in `justfile`. It packages the extension and runs ESLint in a Node 24 Podman container.
+- `just build` does not execute QUnit. The suite is in `unitTest/Tests.html`; the repository has no containerized QUnit target yet.
+
+## Changes and Reviews
+
+Use descriptive change summaries; recent history uses prefixes such as `feat:`, `fix:`, `refactor:`, and `build:`. Follow the pull request checklist in `CONTRIBUTING.md`, including updating contributor credits when applicable.
+
+## Revision Workflow
+
+Use the JJ MCP for Jujutsu operations, including status, history, descriptions, rebases, and commits.
