@@ -257,21 +257,22 @@ When creating a new parser, follow these required steps:
 
 ## 7. Local Repository Workflow
 
-## Project Structure
+### Project Structure
 
 - Extension code is in `plugin/`; site parsers are in `plugin/js/parsers/`.
-- QUnit tests and fixtures are in `unitTest/`; `Tests.html` loads the test suite.
-- Packaging and lint configuration are in `eslint/`.
+- QUnit tests are in `unitTest/`; local HTML fixtures are in the repository-root `testdata/` directory. `unitTest/Tests.html` loads the test suite.
+- Packaging and lint configuration are in `eslint/`; follow the JavaScript rules in `eslint/.eslintrc.js`.
 
-## Build and Checks
+### Build and Checks
 
 - Use `just build` as the containerized build and lint entry point; its definition is in `justfile`. It packages the extension and runs ESLint in a Node 24 Podman container.
-- `just build` does not execute QUnit. The suite is in `unitTest/Tests.html`; the repository has no containerized QUnit target yet.
+- Use `just test` to run `npm test` in a Node 24 Podman container. Open `http://127.0.0.1:8080/unitTest/Tests.html` in a host browser to view QUnit; stop the server with Ctrl-C.
+- QUnit runs in the browser from `unitTest/Tests.html`; `just build` does not execute it.
 
-## Changes and Reviews
+### Changes and Reviews
 
 Use descriptive change summaries; recent history uses prefixes such as `feat:`, `fix:`, `refactor:`, and `build:`. Follow the pull request checklist in `CONTRIBUTING.md`, including updating contributor credits when applicable.
 
-## Revision Workflow
+### Revision Workflow
 
 Use the JJ MCP for Jujutsu operations, including status, history, descriptions, rebases, and commits.
