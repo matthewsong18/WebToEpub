@@ -33,6 +33,12 @@
   };
 
   files.".codex/config.toml".toml = {
+    model = "gpt-6.1-sol";
+    model_reasoning_effort = "medium";
+    agents = {
+      default_subagent_model = "gpt-6-luna";
+      default_subagent_reasoning_effort = "high";
+    };
     mcp_servers.webtoepub_browser = {
       command = "${config.scripts.webtoepub-browser-mcp.scriptPackage}/bin/webtoepub-browser-mcp";
       cwd = config.devenv.root;

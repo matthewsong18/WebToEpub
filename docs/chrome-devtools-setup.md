@@ -63,6 +63,12 @@ Entering the environment in step 1 generates `.codex/config.toml` using devenv's
 section of [devenv.nix](../devenv.nix). Edit that Nix section to change the MCP
 settings, then enter the environment again.
 
+The generated project configuration also defaults the main agent to
+`gpt-6.1-sol` with `medium` reasoning and spawned agents to `gpt-6-luna` with
+`high` reasoning. Explicit session/model-picker choices or explicit subagent
+settings can override these defaults. Setting subagent defaults does not itself
+cause work to be delegated. See [Codex subagent settings](https://learn.chatgpt.com/docs/agent-configuration/subagents).
+
 The generated file points directly to the launcher's absolute Nix store path,
 sets the working directory to this checkout, and forwards the desktop display
 variables. Codex does not need to inherit the devenv shell's PATH or launch a
