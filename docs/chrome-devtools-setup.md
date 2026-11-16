@@ -119,7 +119,7 @@ devenv shell
 version=$(node -p "require('./plugin/manifest.json').version")
 extension_dir="$PWD/.devenv/state/chrome-extension"
 mkdir -p "$extension_dir"
-unzip -o "eslint/WebToEpub${version}.zip" -d "$extension_dir"
+unzip -o "result/WebToEpub${version}.zip" -d "$extension_dir"
 printf '%s\n' "$extension_dir"
 ```
 

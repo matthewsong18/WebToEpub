@@ -4,7 +4,7 @@ eslint/packed.js
 eslint/index.csv
 node_modules
 plugin/@zip.js/zip.js/dist/zip-no-worker.min.js
-package-lock.json
+/result
 .idea
 .vscode
 /plugin/dompurify/
