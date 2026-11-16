@@ -265,9 +265,7 @@ When creating a new parser, follow these required steps:
 
 ### Build and Checks
 
-- Use `just build` as the containerized build and lint entry point; its definition is in `justfile`. It packages the extension and runs ESLint in a Node 24 Podman container.
-- Use `just test` to run `npm test` in a Node 24 Podman container. Open `http://127.0.0.1:8080/unitTest/Tests.html` in a host browser to view QUnit; stop the server with Ctrl-C.
-- QUnit runs in the browser from `unitTest/Tests.html`; `just build` does not execute it.
+- Run `just build` to package the extension and run ESLint in the Nix build sandbox on Linux. Find the Chrome ZIP and Firefox XPI under `result/`.
 
 ### Changes and Reviews
 
