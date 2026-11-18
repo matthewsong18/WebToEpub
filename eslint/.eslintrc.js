@@ -28,6 +28,7 @@ module.exports = {
             "always"
         ],
         "no-undef": "error",
+        "valid-injected-function": "error",
         "no-unused-vars": "error",
         // needed to avoid no-redeclare errors for our project globals below
         "no-redeclare": ["error", { "builtinGlobals": false }],

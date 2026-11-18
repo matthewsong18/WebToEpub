@@ -1,5 +1,9 @@
 # Local browser validation for WebToEpub parsers
 
+> Historical proposal, superseded by the build-only workflow in
+> [CONTRIBUTING.md](../../CONTRIBUTING.md). The browser runner, live validation,
+> and monitoring steps below are not implementation requirements.
+
 For the subsequent devenv launcher and connection instructions, see the
 [Chrome DevTools setup guide](../chrome-devtools-setup.md). The availability
 observations below describe the original research session.
