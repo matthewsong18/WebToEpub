@@ -3,6 +3,10 @@
 build:
     nix build
 
+remote machine:
+    ssh {{ machine }} 'cd ~/Projects/WebToEpub && just build'
+    rsync -rvzL ms-pc:~/Projects/WebToEpub/result/ ./result/
+
 fix:
     podman run --rm -it \
         -v "$(pwd):/app:rw,Z" \
