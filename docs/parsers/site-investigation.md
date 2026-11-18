@@ -11,6 +11,11 @@ A page that blanks or redirects under that connection may differ from the user's
 normal browser session. Stop repeating that inspection route once this behavior
 is established for the site.
 
+For targeted ways to recover inspection access, consult the
+[DevTools blocker playbook](devtools-blocker-playbook.md) and its linked
+library research. These distinguish documented techniques from live-site
+verification and include routes that do not require a DevTools connection.
+
 Prefer user-supplied page source, saved JavaScript bundles, sanitized network
 captures, public API responses, and the user's manual observations. Inspect saved
 scripts as text. Preserve the distinction between the initial HTML, the rendered
