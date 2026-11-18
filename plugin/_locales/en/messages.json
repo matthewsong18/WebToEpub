@@ -704,6 +704,15 @@
 		"message": "This is an intermittent error. If you retry in a few minutes, it may succeed.",
 		"description": "Added message that retrying HTTP operation may succeed."
 	},
+	"networkRetrying": {
+		"message": "Connection interrupted. Retrying in $seconds$ seconds. Pause to stop.",
+		"description": "Countdown shown while an active download retries a network request.",
+		"placeholders": {
+			"seconds": {
+				"content": "$1"
+			}
+		}
+	},
 	"htmlFetchFailed": {
 		"message": "Fetch of URL '$url$' failed with network error $err$.",
 		"description": "Error message when fetch of a web page fails.",

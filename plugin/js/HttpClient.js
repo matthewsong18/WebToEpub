@@ -158,6 +158,151 @@ class HttpClient {
         return { credentials: "include" };
     }
 
+    static beginDownloadSession(parser, pauseSignal) {
+        HttpClient.downloadSession = {
+            parser: parser,
+            pauseSignal: pauseSignal,
+            activeController: null,
+            minimumDelay: parser.getRateLimit?.() ?? parser.minimumThrottle ?? 0
+        };
+        HttpClient.updateRetryStatus("");
+    }
+
+    static endDownloadSession() {
+        HttpClient.downloadSession = null;
+        HttpClient.updateRetryStatus("");
+    }
+
+    static updateRetryStatus(text) {
+        let element = document.getElementById("networkRetryStatus");
+        if (element != null) {
+            element.textContent = text;
+        }
+    }
+
+    static makeDownloadCancelledError() {
+        let error = new Error("Download paused.");
+        error.name = "AbortError";
+        return error;
+    }
+
+    static isDownloadPaused(session) {
+        return session?.pauseSignal?.aborted === true;
+    }
+
+    static isRetryableNetworkError(error) {
+        if (error?.name === "NetworkError") {
+            return true;
+        }
+        if (error instanceof TypeError) {
+            return /fetch|network|load failed/i.test(error.message);
+        }
+        return false;
+    }
+
+    static async waitForNetworkRetry(session, delayMs) {
+        let minimumDelay = session.parser.getRateLimit?.() ?? session.parser.minimumThrottle ?? session.minimumDelay;
+        let waitMs = Math.max(delayMs, minimumDelay);
+        while (waitMs > 0) {
+            if (HttpClient.isDownloadPaused(session)) {
+                throw HttpClient.makeDownloadCancelledError();
+            }
+            const remainingSeconds = Math.ceil(waitMs / 1000);
+            HttpClient.updateRetryStatus(
+                chrome.i18n.getMessage("networkRetrying", [String(remainingSeconds)])
+            );
+            const interval = Math.min(waitMs, 1000);
+            await util.sleep(interval);
+            waitMs -= interval;
+        }
+        if (HttpClient.isDownloadPaused(session)) {
+            throw HttpClient.makeDownloadCancelledError();
+        }
+        HttpClient.updateRetryStatus("");
+    }
+
+    static async fetchWithNetworkRetry(url, wrapOptions) {
+        let session = HttpClient.downloadSession;
+        let retryNumber = 0;
+        let retryUntilSuccess = true;
+        while (retryUntilSuccess) {
+            if (HttpClient.isDownloadPaused(session)) {
+                throw HttpClient.makeDownloadCancelledError();
+            }
+
+            const callerSignal = wrapOptions.fetchOptions.signal;
+            const controller = session == null ? null : new AbortController();
+            let timeoutId;
+            let timedOut = false;
+            let onPaused;
+            let onCallerAbort;
+            if (controller != null) {
+                session.activeController = controller;
+                onPaused = () => controller.abort();
+                onCallerAbort = () => controller.abort();
+                session.pauseSignal?.addEventListener("abort", onPaused, { once: true });
+                callerSignal?.addEventListener("abort", onCallerAbort, { once: true });
+                if (callerSignal?.aborted) {
+                    controller.abort();
+                }
+                timeoutId = setTimeout(() => {
+                    timedOut = true;
+                    controller.abort();
+                }, HttpClient.REQUEST_TIMEOUT_MS);
+                wrapOptions.fetchOptions = Object.assign({}, wrapOptions.fetchOptions, {
+                    signal: controller.signal
+                });
+            }
+
+            let response;
+            let responseBody;
+            let retryDelayMs = null;
+            try {
+                await HttpClient.setPartitionCookies(url);
+                if (HttpClient.isDownloadPaused(session)) {
+                    throw HttpClient.makeDownloadCancelledError();
+                }
+                response = await fetch(url, wrapOptions.fetchOptions);
+                await HttpClient.unsetPartitionCookies(url);
+                if (response.ok) {
+                    let handler = wrapOptions.responseHandler;
+                    handler.setResponse(response);
+                    responseBody = await handler.readResponseBody(response);
+                }
+                HttpClient.updateRetryStatus("");
+                retryUntilSuccess = false;
+                return { response: response, responseBody: responseBody };
+            } catch (error) {
+                if (HttpClient.isDownloadPaused(session) || callerSignal?.aborted) {
+                    throw HttpClient.makeDownloadCancelledError();
+                }
+                if (session == null || (!timedOut && !HttpClient.isRetryableNetworkError(error))) {
+                    throw error;
+                }
+
+                const delaySeconds = HttpClient.NETWORK_RETRY_DELAYS_SECONDS[
+                    Math.min(retryNumber, HttpClient.NETWORK_RETRY_DELAYS_SECONDS.length - 1)
+                ];
+                retryNumber += 1;
+                retryDelayMs = delaySeconds * 1000;
+            } finally {
+                clearTimeout(timeoutId);
+                session?.pauseSignal?.removeEventListener("abort", onPaused);
+                callerSignal?.removeEventListener("abort", onCallerAbort);
+                if (session?.activeController === controller) {
+                    session.activeController = null;
+                }
+                if (response == null) {
+                    await HttpClient.unsetPartitionCookies(url);
+                }
+                wrapOptions.fetchOptions.signal = callerSignal;
+            }
+            if (retryDelayMs != null) {
+                await HttpClient.waitForNetworkRetry(session, retryDelayMs);
+            }
+        }
+    }
+
     static wrapFetch(url, wrapOptions) {
         if (wrapOptions == null) {
             wrapOptions = {
@@ -221,10 +366,9 @@ class HttpClient {
         }
         try
         {
-            await HttpClient.setPartitionCookies(url);
-            let response = await fetch(url, wrapOptions.fetchOptions);
-            await HttpClient.unsetPartitionCookies(url);
-            let ret = await HttpClient.checkResponseAndGetData(url, wrapOptions, response);
+            let result = await HttpClient.fetchWithNetworkRetry(url, wrapOptions);
+            let response = result.response;
+            let ret = await HttpClient.checkResponseAndGetData(url, wrapOptions, response, result.responseBody);
             if (wrapOptions.parser?.isNoContentToError403AndContentNull(ret)) {
                 let CustomNoContentToError403Response = wrapOptions.parser.setNoContentToError403Response(url, wrapOptions, ret);
                 return wrapOptions.errorHandler.onResponseError(CustomNoContentToError403Response.url, CustomNoContentToError403Response.wrapOptions, CustomNoContentToError403Response. response, CustomNoContentToError403Response.errorMessage);
@@ -237,17 +381,20 @@ class HttpClient {
         }
         catch (error)
         {
+            if (HttpClient.isDownloadPaused(HttpClient.downloadSession)) {
+                throw HttpClient.makeDownloadCancelledError();
+            }
             return wrapOptions.errorHandler.onFetchError(url, error);
         }
     }
 
-    static checkResponseAndGetData(url, wrapOptions, response) {
+    static checkResponseAndGetData(url, wrapOptions, response, responseBody) {
         if (!response.ok) {
             return wrapOptions.errorHandler.onResponseError(url, wrapOptions, response);
         } else {
             let handler = wrapOptions.responseHandler;
             handler.setResponse(response);
-            return handler.extractContentFromResponse(response);
+            return handler.extractContentFromResponse(response, responseBody);
         }
     }
 
@@ -340,6 +487,9 @@ class HttpClient {
 
 let BlockedHostNames = new Set();
 HttpClient.blockedSites = new Set();
+HttpClient.downloadSession = null;
+HttpClient.REQUEST_TIMEOUT_MS = 60000;
+HttpClient.NETWORK_RETRY_DELAYS_SECONDS = [5, 10, 20, 40, 60];
 
 class FetchResponseHandler {
     isHtml() {
@@ -351,42 +501,42 @@ class FetchResponseHandler {
         this.contentType = response.headers.get("content-type");
     }
 
-    extractContentFromResponse(response) {
+    extractContentFromResponse(response, body) {
+        return this.processResponseBody(response, body);
+    }
+
+    readResponseBody(response) {
+        return response.arrayBuffer();
+    }
+
+    processResponseBody(response, body) {
         if (this.isHtml()) {
-            return this.responseToHtml(response);
+            return this.responseToHtml(response, body);
         } else {
-            return this.responseToBinary(response);
+            return this.responseToBinary(response, body);
         }
     }
 
-    responseToHtml(response) {
-        return response.arrayBuffer().then(function(rawBytes) {
-            let data = this.makeTextDecoder(response).decode(rawBytes);
-            let html = new DOMParser().parseFromString(data, "text/html");
-            util.setBaseTag(this.response.url, html);
-            this.responseXML = html;
-            return this;
-        }.bind(this));
+    responseToHtml(response, rawBytes) {
+        let data = this.makeTextDecoder(response).decode(rawBytes);
+        let html = new DOMParser().parseFromString(data, "text/html");
+        util.setBaseTag(this.response.url, html);
+        this.responseXML = html;
+        return this;
     }
 
-    responseToBinary(response) {
-        return response.arrayBuffer().then(function(data) {
-            this.arrayBuffer = data;
-            return this;
-        }.bind(this));
+    responseToBinary(response, data) {
+        this.arrayBuffer = data;
+        return this;
     }
 
-    responseToText(response) {
-        return response.arrayBuffer().then(function(rawBytes) {
-            return this.makeTextDecoder(response).decode(rawBytes);
-        }.bind(this));
+    responseToText(response, rawBytes) {
+        return this.makeTextDecoder(response).decode(rawBytes);
     }
 
-    responseToJson(response) {
-        return response.text().then(function(data) {
-            this.json =  JSON.parse(data);
-            return this;
-        }.bind(this));
+    responseToJson(response, data) {
+        this.json = JSON.parse(data);
+        return this;
     }
 
     makeTextDecoder(response) {
@@ -412,8 +562,12 @@ class FetchJsonResponseHandler extends FetchResponseHandler {
         super();
     }
 
-    extractContentFromResponse(response) {
-        return super.responseToJson(response);
+    extractContentFromResponse(response, body) {
+        return this.responseToJson(response, body);
+    }
+
+    readResponseBody(response) {
+        return response.text();
     }
 }
 
@@ -422,8 +576,8 @@ class FetchTextResponseHandler extends FetchResponseHandler {
         super();
     }
 
-    extractContentFromResponse(response) {
-        return super.responseToText(response);
+    extractContentFromResponse(response, body) {
+        return this.responseToText(response, body);
     }
 }
 
@@ -432,7 +586,7 @@ class FetchHtmlResponseHandler extends FetchResponseHandler {
         super();
     }
 
-    extractContentFromResponse(response) {
-        return super.responseToHtml(response);
+    extractContentFromResponse(response, body) {
+        return this.responseToHtml(response, body);
     }
 }

@@ -439,6 +439,9 @@ class ImageCollector {
         }
         catch (error)
         {
+            if (util.getSleepController().signal.aborted) {
+                throw error;
+            }
             // ToDo, implement error handler.
             this.imagesToPack.push(imageInfo);
             ErrorLog.log(error);

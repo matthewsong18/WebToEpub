@@ -308,6 +308,11 @@
         "message": "Bị lỗi gián đoạn. Thử lại có thể thành công.",
         "description": ""
     },
+    "networkRetrying": {
+        "message": "Kết nối bị gián đoạn. Đang thử lại sau $seconds$ giây. Nhấn Tạm dừng để dừng.",
+        "description": "Countdown shown while an active download retries a network request.",
+        "placeholders": { "seconds": { "content": "$1" } }
+    },
     "htmlFetchFailed": {
         "message": "Tải trang từ đường dẫn '$url$' bị lỗi do lỗi mạng $err$",
         "description": "",

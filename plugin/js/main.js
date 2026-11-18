@@ -160,8 +160,13 @@ var main = (function() {
         window.workInProgress = true;
         main.getPackEpubButton().disabled = true;
         replaceLibAddToLibrary();
-        parser.onStartCollecting();
-        await parser.fetchContent();
+        HttpClient.beginDownloadSession(parser, util.getSleepController().signal);
+        try {
+            parser.onStartCollecting();
+            await parser.fetchContent();
+        } finally {
+            HttpClient.endDownloadSession();
+        }
         let content = await packEpub(metaInfo);
         // Enable button here.  If user cancels save dialog
         // the promise never returns

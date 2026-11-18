@@ -368,6 +368,11 @@
 		"message": "Внезапно возникла ошибка. Попробуйте ещё раз.",
 		"description": "Added message that retrying HTTP operation may succeed."
 	},
+	"networkRetrying": {
+		"message": "Соединение прервано. Повтор через $seconds$ сек. Нажмите «Пауза», чтобы остановить.",
+		"description": "Countdown shown while an active download retries a network request.",
+		"placeholders": { "seconds": { "content": "$1" } }
+	},
 	"htmlFetchFailed": {
 		"message": "Попытка загрузки адреса '$url$' завершилась с ошибкой сети: $err$.",
 		"description": "Error message when fetch of a web page fails.",

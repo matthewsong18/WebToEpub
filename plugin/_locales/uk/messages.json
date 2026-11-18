@@ -368,6 +368,11 @@
 		"message": "Раптово виникла помилка. Будь ласка, спробуйте ще раз.",
 		"description": "Added message that retrying HTTP operation may succeed."
 	},
+	"networkRetrying": {
+		"message": "З’єднання перервано. Повтор через $seconds$ с. Натисніть «Пауза», щоб зупинити.",
+		"description": "Countdown shown while an active download retries a network request.",
+		"placeholders": { "seconds": { "content": "$1" } }
+	},
 	"htmlFetchFailed": {
 		"message": "Спроба завантаження адреси '$url$' скінчилася помилкою мережі: $err$.",
 		"description": "Error message when fetch of a web page fails.",

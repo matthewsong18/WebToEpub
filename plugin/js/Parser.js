@@ -660,6 +660,11 @@ class Parser {
             }
             return pageParser.fetchImagesUsedInDocument(content, webPage);
         } catch (error) {
+            if (util.getSleepController().signal.aborted) {
+                delete webPage.rawDom;
+                delete webPage.error;
+                return;
+            }
             if (this.userPreferences.skipChaptersThatFailFetch.value) {
                 ErrorLog.log(error);
                 webPage.error = error;
