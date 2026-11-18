@@ -1,5 +1,11 @@
 # Set up a local agent browser with Chrome DevTools MCP
 
+For optional site investigation. Parser validation uses only `just build`;
+see [CONTRIBUTING.md](../CONTRIBUTING.md). For sites that detect DevTools,
+follow [site investigation](parsers/site-investigation.md) before connecting.
+The browser exercises below apply when explicitly requested.
+
+
 This guide uses the Chromium supplied by this project's devenv. It runs the real
 WebToEpub extension in a dedicated local browser so an agent can investigate a
 site, reload parser changes, inspect failures, and verify the resulting EPUB.
